@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>TERMINAL HUB v9.8 ANIMATED</title>
+    <style>
+        :root { 
+            --blue: #00d4ff; --green: #39ff14; --purple: #bc13fe; 
+            --orange: #ff9100; --bg: #020617; --card: rgba(15, 23, 42, 0.85); 
+            --pink: #ff007f;
+        }
+
+        body { 
+            background: #020617; color: #e2e8f0; font-family: 'Consolas', monospace; 
+            padding: 25px; margin: 0; min-height: 100vh;
+        }
+
+        /* Анимация появления при загрузке */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        header { border-bottom: 2px solid var(--blue); padding-bottom: 20px; margin-bottom: 40px; }
+
+        .section-title { color: #fff; text-transform: uppercase; margin: 60px 0 20px; border-left: 4px solid var(--blue); padding-left: 15px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+
+        /* АНИМАЦИЯ КАРТОЧЕК (ИГРЫ И ПАПКИ) */
+        .card, .game-card, .music-box { 
+            background: var(--card); border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 15px; padding: 20px; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+        
+        .card:hover, .game-card:hover { 
+            transform: translateY(-10px); 
+            border-color: var(--blue); 
+            box-shadow: 0 15px 35px rgba(0, 212, 255, 0.2); 
+        }
+
+        .music-box { border: 2px solid var(--green); margin-bottom: 80px; }
+        .music-box:hover { box-shadow: 0 0 25px rgba(57, 255, 20, 0.15); }
+
+        .btn { 
+            text-align: center; text-decoration: none; padding: 10px; border-radius: 8px; 
+            font-weight: bold; font-size: 11px; border: 1px solid; cursor: pointer; 
+            background: none; transition: 0.3s; color: inherit; display: block;
+        }
+        .btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
+
+        /* ПЛАВНАЯ ШТОРКА (АККОРДЕОН) */
+        .accordion { 
+            background: rgba(255, 145, 0, 0.1); color: var(--orange); cursor: pointer; padding: 20px; 
+            width: 100%; border: 1px solid var(--orange); text-align: left; font-family: inherit; 
+            font-weight: bold; border-radius: 12px; margin-top: 40px; display: flex; 
+            justify-content: space-between; align-items: center; transition: 0.3s;
+        }
+        .accordion:hover { background: rgba(255, 145, 0, 0.2); }
+        
+        .panel { 
+            max-height: 0; overflow: hidden; 
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1); /* Плавное открытие */
+            background: rgba(0, 0, 0, 0.3); border: 0px solid var(--orange); 
+            border-radius: 0 0 12px 12px; margin-bottom: 20px;
+        }
+        .panel.show { 
+            max-height: 1000px; transition: max-height 1s ease-in; 
+            border-width: 1px; border-top: none;
+        }
+
+        /* КРЕСТИКИ НОЛИКИ */
+        .board { display: grid; grid-template-columns: repeat(3, 80px); gap: 12px; margin: 20px auto; width: 264px; }
+        .cell { 
+            width: 80px; height: 80px; background: rgba(0,0,0,0.6); border: 2px solid #1e293b; 
+            display: flex; align-items: center; justify-content: center; font-size: 36px; 
+            font-weight: bold; cursor: pointer; border-radius: 12px; transition: 0.2s;
+        }
+        .cell:hover { border-color: var(--blue); transform: scale(1.05); }
+
+        canvas { background: #FFFFFF; border: 3px solid #1e293b; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header style="animation: fadeInUp 0.5s ease;">
+        <div style="color: var(--blue); font-weight: bold; font-size: 28px;">TERMINAL HUB <span style="font-size: 14px; opacity: 0.5;">v9.8</span></div>
+        <div style="color: var(--green); font-size: 11px;">SYNC_ANIMATION: ACTIVE</div>
+    </header>
+
+    <div class="music-box" style="animation-delay: 0.1s;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <span style="color: var(--green); font-weight: bold;">📻 NEON RADIO</span>
+            <input type="range" min="0" max="1" step="0.01" value="0.5" oninput="player.volume = this.value" style="accent-color: var(--green);">
+        </div>
+        <audio id="audio-player"></audio>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn" style="border-color: var(--green); color: var(--green);" onclick="setMaster(true)">PLAY SYNC</button>
+            <button class="btn" style="border-color: var(--pink); color: var(--pink);" onclick="setMaster(false)">STOP SYNC</button>
+        </div>
+        <div style="max-height: 100px; overflow-y: auto; margin-top: 15px; border-top: 1px solid #333;">
+            {% for song in music %} 
+            <div style="padding: 8px; font-size: 12px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color=''" onclick="changeGlobalTrack('{{ song }}')">🎵 {{ song }}</div> 
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="grid">
+        {% for fid, data in main_folders.items() %}
+        <div class="card" style="animation-delay: {{ loop.index * 0.1 }}s">
+            <h3 style="color: var(--green); font-size: 15px; margin-top: 0;">📁 {{ data.name }}</h3>
+            {% for file in data.files %}
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px;">
+                <span style="opacity: 0.8;">{{ file }}</span>
+                <a href="{{ url_for('download', filename=fid+'/'+file) }}" style="color: var(--blue); text-decoration: none; font-weight: bold;">[GET]</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <h2 class="section-title">🕹️ GAME REPOSITORY</h2>
+    <div class="grid">
+        {% for gtype, items in games.items() %}
+            {% for game in items %}
+            <div class="game-card" style="animation-delay: {{ loop.index * 0.1 }}s">
+                <div style="font-size: 9px; color: var(--blue); margin-bottom: 5px;">{{ gtype | upper }}</div>
+                <h3 style="margin: 0 0 15px 0; color: #fff;">{{ game.display_name }}</h3>
+                <div style="display: flex; gap: 8px;">
+                    {% if game.torrent %}<a href="{{ url_for('download', filename='games/'+game.folder_name+'/'+game.torrent) }}" class="btn" style="border-color: var(--blue); flex: 1; color: var(--blue);">TORRENT</a>{% endif %}
+                    {% if gtype == 'steam' and game.fix %}<a href="{{ url_for('download', filename='games/'+game.folder_name+'/'+game.fix) }}" class="btn" style="border-color: var(--purple); flex: 1; color: var(--purple);">FIX</a>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <button class="accordion" id="acc-btn">📂 ДОПОЛНИТЕЛЬНО / ССЫЛКИ <span id="acc-icon">▼</span></button>
+    <div class="panel" id="acc-panel">
+        <div style="padding: 10px;">
+            {% for item in extra_items %}
+            <div style="display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #333; align-items: center;">
+                <span style="color: #cbd5e1;">{{ item.display }}</span>
+                <a href="{{ item.url if item.url else url_for('download', filename='extra/'+item.name) }}" class="btn" style="border-color: var(--green); color: var(--green); padding: 5px 20px;" target="_blank">OPEN</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <h2 class="section-title">⚡ COLLABORATION ZONE</h2>
+    <div class="card" style="background: rgba(10, 15, 30, 0.9); padding: 30px; animation-delay: 0.4s;">
+        <div style="display: flex; flex-wrap: wrap; gap: 40px; justify-content: center;">
+            <div style="text-align: center;">
+                <div id="game-status" style="color: var(--purple); font-weight: bold; margin-bottom: 15px; font-size: 18px;"></div>
+                <div class="board" id="board"></div>
+                <button id="res-btn" class="btn" style="display:none; width: 100%; background: var(--green); color: #000; border: none; margin-top: 20px; font-weight: bold;" onclick="fetch('/game/reset', {method:'POST'})">RESTART MATCH</button>
+            </div>
+            <div style="flex: 1; min-width: 350px;">
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; justify-content: center;">
+                    <div style="background: #1a1a1a; padding: 10px; border-radius: 10px; display: flex; gap: 10px; align-items: center;">
+                        <span style="font-size: 10px; color: #888;">RGB</span>
+                        <input type="color" id="rgb-picker" value="#000000" style="border:none; width:30px; height:30px; background:none; cursor:pointer;">
+                    </div>
+                    <input type="range" id="size-slider" min="1" max="50" value="3" style="accent-color: var(--blue);">
+                    <button class="btn" style="border-color: var(--pink); color: var(--pink); font-size: 10px;" onclick="fetch('/drawing/clear', {method:'POST'})">CLEAR</button>
+                </div>
+                <canvas id="drawing-canvas" width="750" height="450" style="width: 100%; height: auto;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="section-title">🛠️ UTILS</h2>
+    <div class="grid" style="margin-bottom: 80px;">
+        {% for file in tools %} 
+        <a href="{{ url_for('download', filename='tools/'+file) }}" class="card" style="text-decoration:none; color: #888; font-size: 11px; text-align: center; animation-delay: 0.5s;">{{ file }}</a> 
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    const player = document.getElementById('audio-player');
+    const cvs = document.getElementById('drawing-canvas');
+    const ctx = cvs.getContext('2d');
+    const rgbPicker = document.getElementById('rgb-picker');
+
+    // ЛОГИКА ПЛАВНОЙ ШТОРКИ
+    document.getElementById("acc-btn").onclick = function() {
+        const panel = document.getElementById("acc-panel");
+        const icon = document.getElementById("acc-icon");
+        panel.classList.toggle("show");
+        icon.innerText = panel.classList.contains("show") ? "▲" : "▼";
+    };
+
+    // РИСОВАНИЕ (ZERO DELAY)
+    let drawing = false, lx=0, ly=0;
+    function drawL(l) {
+        ctx.strokeStyle = l[4]; ctx.lineWidth = l[5]; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(l[0], l[1]); ctx.lineTo(l[2], l[3]); ctx.stroke();
+    }
+    cvs.onmousedown = (e) => { drawing = true; [lx, ly] = [e.offsetX * (cvs.width/cvs.clientWidth), e.offsetY * (cvs.height/cvs.clientHeight)]; };
+    cvs.onmousemove = (e) => {
+        if(!drawing) return;
+        const x = e.offsetX * (cvs.width/cvs.clientWidth);
+        const y = e.offsetY * (cvs.height/cvs.clientHeight);
+        const line = [lx, ly, x, y, rgbPicker.value, document.getElementById('size-slider').value];
+        drawL(line);
+        fetch('/drawing/draw', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({line:line})});
+        [lx, ly] = [x, y];
+    };
+    window.onmouseup = () => drawing = false;
+
+    setInterval(async () => {
+        if(drawing) return;
+        const r = await fetch('/drawing/state'); const s = await r.json();
+        ctx.fillStyle = "#FFF"; ctx.fillRect(0,0,cvs.width,cvs.height);
+        s.lines.forEach(drawL);
+    }, 3000);
+
+    // ИГРА (ZERO DELAY)
+    async function syncGame() {
+        const r = await fetch('/game/state'); const d = await r.json();
+        document.getElementById('game-status').innerText = d.status;
+        document.getElementById('res-btn').style.display = (d.winner || !d.board.includes("")) ? 'block' : 'none';
+        const b = document.getElementById('board'); b.innerHTML = '';
+        d.board.forEach((v, i) => {
+            const c = document.createElement('div'); c.className = 'cell'; c.innerText = v;
+            if(v==='X') c.style.color='var(--blue)'; if(v==='O') c.style.color='var(--purple)';
+            c.onclick = () => { 
+                if(v==="" && !d.winner) {
+                    c.innerText = "X"; // Optimistic
+                    fetch('/game/move', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({index:i})}); 
+                }
+            };
+            b.appendChild(c);
+        });
+    }
+    setInterval(syncGame, 1000);
+
+    // РАДИО
+    async function changeGlobalTrack(n) { isLeading = true; await fetch('/music/control', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({track:n, is_playing:true, timestamp:0})}); }
+    async function setMaster(p) { isLeading = p; await fetch('/music/control', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({is_playing:p, timestamp:player.currentTime})}); }
+    async function syncMusic() {
+        const r = await fetch('/music/state'); const s = await r.json();
+        if(!s.current_track) return;
+        if(!player.src.includes(encodeURIComponent(s.current_track))) player.src = '/download/music/' + encodeURIComponent(s.current_track);
+        if(!isLeading && Math.abs(player.currentTime - s.timestamp) > 2) player.currentTime = s.timestamp;
+        s.is_playing ? player.play().catch(()=>0) : player.pause();
+    }
+    setInterval(syncMusic, 2000);
+</script>
+</body>
+</html>
